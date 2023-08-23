@@ -1,14 +1,17 @@
 {
-  "name": "todo-app",
+  "name": "practice-nodejs",
   "version": "1.0.0",
-  "description": "ToDoアプリケーション",
+  "description": "",
   "main": "app.js",
-  "dependencies": {
-    "body-parser": "^1.20.2",
-    "express": "^4.18.2",
-    "pg": "^8.11.3"
-  },
   "scripts": {
-	"start": "node app.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemon": "^3.0.1"
   }
 }
