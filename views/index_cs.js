@@ -50,7 +50,8 @@ $(() => {
 			},
 		})
 		.done((res) => {
-			console.log(`データの登録に成功しました。登録した情報は${ res.length }個です。`);
+			// 実行結果を表示
+			alert(res.msg);
 		})
 		.fail((hr, status, error) => {
 			console.log(`サーバとの通信に失敗しました。`)
