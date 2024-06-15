@@ -2,12 +2,12 @@
 -- DROP TABLE todo_t_task;
 
 CREATE TABLE todo_t_task (
-	task_name varchar(1000) NOT NULL
-	, complete_flg varchar(1)
-	, create_user varchar(1000)
-	, create_date timestamp(6)
-	, update_user varchar(1000)
-	, update_date timestamp(6)
+  task_name varchar(1000) NOT NULL
+  , complete_flg varchar(1)
+  , create_user varchar(1000)
+  , create_date timestamp(6)
+  , update_user varchar(1000)
+  , update_date timestamp(6)
 );
 COMMENT ON TABLE todo_t_task IS 'タスク';
 COMMENT ON COLUMN todo_t_task.task_name IS 'タスク名';

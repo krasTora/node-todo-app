@@ -1,3 +1,3 @@
 DELETE FROM
-	todo_t_task
+  todo_t_task
 ;
