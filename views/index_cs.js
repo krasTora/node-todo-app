@@ -1,27 +1,58 @@
 `use strict`;
 
-$(() => {
+document.addEventListener(`DOMContentLoaded`, () => {
   // タスク追加ボタン押下時の処理
-  $("#addTodo").click(() => {
-    const inputTodo = $("#inputArea").val();
-    if(!inputTodo) {
-      alert('雑魚が！！！');
-      return;
+  document.getElementById(`addTodo`).addEventListener(`click`, () => {
+    // テキストボックスを取得
+    let inputTodo = document.getElementById(`inputArea`);
+    // テキストボックス未入力の場合は処理を中断
+    if(!inputTodo.value) {
+      alert(`なにもしないのにタスクを作ろうとする人は馬鹿のすることです。ホイ卒ですか？`);
+      return false;
     };
-    $("#todoList").append(`<li><input type='checkbox'>${inputTodo}</li>`);
-    // 入力エリアの値を削除する
-    $("#inputArea").val("");
+
+    // タスクを追加する要素を用意
+    const todoList = document.getElementById(`todoList`);
+    // liタグを作成
+    const liTag = document.createElement(`li`);
+    // チェックボックスを作成
+    const inputTag = document.createElement(`input`);
+    const randomId = getUniqueStr();
+    inputTag.setAttribute(`type`, `checkbox`);
+    inputTag.setAttribute(`id`, randomId);
+    // チェックボックスに付与するラベルタグを作成
+    const labelTag = document.createElement(`label`);
+    labelTag.setAttribute(`for`, randomId);
+    labelTag.textContent = inputTodo.value;
+
+    // 作成した要素を組み立てる
+    liTag.appendChild(inputTag);
+    liTag.appendChild(labelTag);
+    todoList.appendChild(liTag);
+
+    // テキストボックスに入力された値を削除する
+    inputTodo.value = ``;
   });
 
   // チェックボックスの入力状態が変わった時の処理
-  // 備忘: functionをアロー関数に置き換えるとifの中に入ってこないなんで？（おそらくthisに入ってくる値が異なる、、、？）
-  $(document).on('change', 'input[type="checkbox"]', function () {
-    if($(this).is(":checked")) {
-      // チェックされた場合は右横に「タスク削除」のボタンを追加
-      $(this).parent().append(`<input type='button' onclick='javaScript:$(this).parent().remove();' value='削除'>`);
+  const todoList = document.getElementById(`todoList`);
+  todoList.addEventListener(`change`, function (e) {
+    // イベントが発火したチェックボックスの要素を取得
+    const targetCheckbox = e.target;
+
+    // チェックボックスがチェックされた場合、チェックされたチェックボックスのliタグにボタンを追加
+    if(targetCheckbox.checked === true) {
+      const delButton = document.createElement(`input`);
+      delButton.setAttribute(`type`, `button`);
+      delButton.setAttribute(`value`, `削除`);
+      delButton.onclick = function () {
+        this.parentNode.remove();
+      };
+      targetCheckbox.parentNode.appendChild(delButton);
     } else {
-      // チェックが外れた場合は「タスク削除」のボタンを削除
-      $(this).parent().find('input[type=button]').remove();
+      // チェックボックスからチェックが外された場合、チェックが外れたチェックボックスのliタグの配下にあるボタンを削除
+      const delButton = targetCheckbox.parentNode.querySelector(`input[type='button']`);
+      delButton.remove();
     };
   });
 
@@ -57,4 +88,19 @@ $(() => {
       console.log(`サーバとの通信に失敗しました。`)
     });
   })
-})
+});
+
+/**
+ * ほぼ一意となる文字列を採番し、返却します
+ * @param {number} myStrong 乱数の桁数
+ * @returns {string}
+ */
+function getUniqueStr(myStrong){
+  const NOW_DATE_TIME = new Date().getTime();
+  const STRONG = 1000;
+  // 引数に乱数の桁数が指定されている場合は引数に合わせる
+  if (myStrong) {
+    STRONG = myStrong;
+  };
+  return NOW_DATE_TIME.toString(16) + Math.floor(STRONG * Math.random()).toString(16);
+};
