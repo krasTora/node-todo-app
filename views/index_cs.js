@@ -7,7 +7,7 @@ document.addEventListener(`DOMContentLoaded`, () => {
     let inputTodo = document.getElementById(`inputArea`);
     // テキストボックス未入力の場合は処理を中断
     if(!inputTodo.value) {
-      alert(`なにもしないのにタスクを作ろうとする人は馬鹿のすることです。ホイ卒ですか？`);
+      alert(`なにもしないのにタスクを作ろうとするのは馬鹿のすることです。ホイ卒ですか？`);
       return false;
     };
 
