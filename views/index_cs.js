@@ -57,18 +57,28 @@ document.addEventListener(`DOMContentLoaded`, () => {
   });
 
   // 登録ボタン押下時の処理
-  $("#registerButton").click(() => {
+  document.getElementById(`registerButton`).addEventListener(`click`, () => {
     // 項目名とチェックボックスの入力状況を取得
-    let inputDataArray = [];
-    $("#todoList li").each((i, el) => {
-      const itemObj = {
-        checkStatus: $(el).find(`input[type=checkbox]`).prop(`checked`),
-        itemName: $(el).text(),
-      };
-      inputDataArray.push(itemObj);
-    });
+    const liTagArray = document.querySelectorAll("#todoList li");
+    // サーバへ送信用の配列を作成
+    const inputDataArray = [];
+    // liタグの数だけループ
+    for(let i = 0; i < liTagArray.length; i++) {
+      // DBに登録する情報を取得
+      const checkbox = liTagArray[i].querySelector(`input[type='checkbox']`);
+      const taskName = liTagArray[i].getElementsByTagName(`label`)[0];
 
-    // AjaxのdataTypeに合わせるためjson文字列に変換
+      // DBに登録する情報をオブジェクトに設定
+      const taskObj = {
+        checkStatus: checkbox.checked,
+        taskName: taskName.textContent,
+      };
+
+      // サーバへ送信用の配列に詰める
+      inputDataArray.push(taskObj);
+    };
+
+    // サーバに送信するデータをJSON形式に変換
     const jsonData = JSON.stringify(inputDataArray);
 
     // 取得した情報をサーバサイドへ送信する
@@ -85,9 +95,9 @@ document.addEventListener(`DOMContentLoaded`, () => {
       alert(res.msg);
     })
     .fail((hr, status, error) => {
-      console.log(`サーバとの通信に失敗しました。`)
+      alert(`サーバとの通信に失敗しました。`);
     });
-  })
+  });
 });
 
 /**

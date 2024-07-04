@@ -15,7 +15,6 @@ app.use(express.static(`views`));
 app.post(`/ajax/register/`, (req, res) => {
   // リクエスト情報をパース
   let reqData = JSON.parse(req.body.inputData);
-  console.log(reqData);
 
   let registerLength = reqData.length;
   let resData = {
@@ -53,7 +52,7 @@ app.post(`/ajax/register/`, (req, res) => {
   // リクエストの数分回す
   for(let i = 0; i < reqData.length; i++) {
     // 登録する情報を整形
-    let taskName = reqData[i].itemName;
+    let taskName = reqData[i].taskName;
     let completeFlag;
     if(reqData[i].checkStatus) {
       completeFlag = `1`;
