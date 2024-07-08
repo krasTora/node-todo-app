@@ -46,25 +46,34 @@ const server = http.createServer((req, res) => {
     });
     req.on('end', async () => {
       try {
+        // リクエストデータをパース
         const postData = querystring.parse(body);
         const inputData = JSON.parse(postData.inputData);
 
+        // 登録前のデータを削除
+        const deleteQuery = `
+          DELETE FROM todo_t_task;
+        `;
+        pool.query(deleteQuery);
+
+        // 1件ずつテーブルにinsertする
         let insertCount = 0;
         for(const task of inputData) {
-          const query = `
+          const insertQuery = `
             INSERT INTO todo_t_task (task_name, complete_flg, create_user, create_date, update_user, update_date)
             VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $3, CURRENT_TIMESTAMP);
           `;
-          const values = [
+          const insertValues = [
             task.taskName,
             task.checkStatus ? '1' : '0',
             'system',
           ];
 
-          await pool.query(query, values);
+          await pool.query(insertQuery, insertValues);
           insertCount++;
         };
 
+        // レスポンスデータ作成、送信処理
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           error: false,
