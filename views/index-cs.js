@@ -84,7 +84,7 @@ document.addEventListener(`DOMContentLoaded`, () => {
     // 取得した情報をサーバサイドへ送信する
     $.ajax({
       type: "POST",
-      url: "http://localhost:3000/ajax/register",
+      url: "./ajax/register",
       dataType: "JSON",
       data: {
         inputData: jsonData,
@@ -92,9 +92,12 @@ document.addEventListener(`DOMContentLoaded`, () => {
     })
     .done((res) => {
       // 実行結果を表示
-      alert(res.msg);
-    })
-    .fail((hr, status, error) => {
+      if(res.error) {
+        alert(res.msg + `: ` + res.description);
+      } else {
+        alert(res.msg);
+      };
+    }).fail((hr, status, error) => {
       alert(`サーバとの通信に失敗しました。`);
     });
   });

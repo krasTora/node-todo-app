@@ -3,6 +3,17 @@
 const http = require(`http`);
 const fs = require(`fs`);
 const path = require(`path`);
+const { Pool } = require(`pg`);
+const querystring = require(`querystring`);
+
+// postgreSQLへの接続情報
+const pool = new Pool({
+  user: `kurastora`,
+  host: `localhost`,
+  database: `kurastora`,
+  password: `kurastora`,
+  port: 5432,
+});
 
 const server = http.createServer((req, res) => {
   if(req.url === `/` || req.url === `/views/index.html`) {
@@ -25,6 +36,49 @@ const server = http.createServer((req, res) => {
       } else {
         res.writeHead(200, { 'Content-Type': `application/javascript` });
         res.end(content);
+      };
+    });
+  } else if (req.url === `/ajax/register` && req.method === `POST`) {
+    // タスク登録処理
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        const postData = querystring.parse(body);
+        const inputData = JSON.parse(postData.inputData);
+
+        let insertCount = 0;
+        for(const task of inputData) {
+          const query = `
+            INSERT INTO todo_t_task (task_name, complete_flg, create_user, create_date, update_user, update_date)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $3, CURRENT_TIMESTAMP);
+          `;
+          const values = [
+            task.taskName,
+            task.checkStatus ? '1' : '0',
+            'system',
+          ];
+
+          await pool.query(query, values);
+          insertCount++;
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: false,
+          msg: `${insertCount}件のタスクを登録しました。`,
+          insertCount: insertCount,
+        }));
+      } catch (error) {
+        console.error('Error inserting data:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: true,
+          msg: `タスクの登録中にエラーが発生しました。`,
+          description: error.message,
+        }));
       };
     });
   } else {
