@@ -5,14 +5,15 @@ const fs = require(`fs`);
 const path = require(`path`);
 const { Pool } = require(`pg`);
 const querystring = require(`querystring`);
+require(`dotenv`).config();
 
 // postgreSQLへの接続情報
 const pool = new Pool({
-  user: `kurastora`,
-  host: `localhost`,
-  database: `kurastora`,
-  password: `kurastora`,
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
 const server = http.createServer((req, res) => {
