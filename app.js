@@ -1,115 +1,104 @@
 `use strict`;
 
-const express = require(`express`);
-const bodyParser = require(`body-parser`);
-const app = express();
-const port = 3000;
-// POSTで受信するときに必要らしい（よくわからん）。この二つを書かないとリクエストボディにundefinedが渡ってきてしまう。
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
+const http = require(`http`);
+const fs = require(`fs`);
+const path = require(`path`);
+const { Pool } = require(`pg`);
+const querystring = require(`querystring`);
 
-// 静的ファイルをクライアントへ返却
-app.use(express.static(`views`));
-
-// 画面の登録ボタン押下時に渡ってくるリクエスト
-app.post(`/ajax/register/`, (req, res) => {
-  // リクエスト情報をパース
-  let reqData = JSON.parse(req.body.inputData);
-
-  let registerLength = reqData.length;
-  let resData = {
-    error : false,
-    msg : `データの登録に成功しました。登録した情報は${ registerLength }個です。`,
-  };
-
-  // 前回のタスク情報を削除
-  // DBへ接続
-  const { Client } = require("pg");
-  const client = new Client({
-    user: "kurastora",
-    host: "localhost",
-    database: "kurastora",
-    password: "kurastora",
-    port: 5432,
-  });
-  client.connect();
-  // 実行クエリ定義
-  const delQuery = {
-    text: `DELETE FROM todo_t_task`,
-    values: [],
-  };
-
-  // DBへINSERT
-  client
-    .query(delQuery)
-    .then((res) => {
-      console.log(res);
-      // DBの接続解除
-      client.end();
-    })
-    .catch((e) => console.error(e.stack));
-
-  // リクエストの数分回す
-  for(let i = 0; i < reqData.length; i++) {
-    // 登録する情報を整形
-    let taskName = reqData[i].taskName;
-    let completeFlag;
-    if(reqData[i].checkStatus) {
-      completeFlag = `1`;
-    } else{
-      completeFlag = `0`;
-    };
-    let createUser = `kurastora`;
-    let updateUser = `kurastora`;
-
-    // DBへ接続
-    const { Client } = require("pg");
-    const client = new Client({
-      user: "kurastora",
-      host: "localhost",
-      database: "kurastora",
-      password: "kurastora",
-      port: 5432,
-    });
-    client.connect();
-
-    // 実行クエリ定義
-    const query = {
-      text: `INSERT INTO
-          todo_t_task(
-            task_name
-            , complete_flg
-            , create_user
-            , create_date
-            , update_user
-            , update_date
-          )
-        VALUES (
-          $1
-          , $2
-          , $3
-          , current_timestamp
-          , $4
-          , current_timestamp
-        )`,
-      values: [taskName, completeFlag, createUser, updateUser],
-    };
-
-    // DBへINSERT
-    client
-      .query(query)
-      .then((res) => {
-        console.log(res);
-        // DBの接続解除
-        client.end();
-      })
-      .catch((e) => console.error(e.stack));
-  };
-
-  // レスポンス情報をクライアントへ返却
-  res.json(resData);
+// postgreSQLへの接続情報
+const pool = new Pool({
+  user: `kurastora`,
+  host: `localhost`,
+  database: `kurastora`,
+  password: `kurastora`,
+  port: 5432,
 });
 
-app.listen(port, () => {
-  console.log(`Start server port: ${port}`);
+const server = http.createServer((req, res) => {
+  if(req.url === `/` || req.url === `/views/index.html`) {
+    // HTMLファイルを送信
+    fs.readFile(path.join(__dirname, `/views/index.html`), (err, content) => {
+      if(err) {
+        res.writeHead(500);
+        res.end(`Error loading index.html`);
+      } else {
+        res.writeHead(200, { 'Content-Type': `text/html` });
+        res.end(content);
+      };
+    });
+  } else if(req.url === `/index-cs.js`) {
+    // JavaScriptファイルを送信 ※読み込んだhtmlにscriptタグとかlinkタグにパスが記載されていると勝手にサーバにリクエストされる。例えばscriptタグのsrc属性に記述されているパスの値がreq.urlとなる。
+    fs.readFile(path.join(__dirname, `/views/index-cs.js`), (err, content) => {
+      if(err) {
+        res.writeHead(500);
+        res.end(`Error loading index-cs.js`);
+      } else {
+        res.writeHead(200, { 'Content-Type': `application/javascript` });
+        res.end(content);
+      };
+    });
+  } else if (req.url === `/ajax/register` && req.method === `POST`) {
+    // タスク登録処理
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        // リクエストデータをパース
+        const postData = querystring.parse(body);
+        const inputData = JSON.parse(postData.inputData);
+
+        // 登録前のデータを削除
+        const deleteQuery = `
+          DELETE FROM todo_t_task;
+        `;
+        pool.query(deleteQuery);
+
+        // 1件ずつテーブルにinsertする
+        let insertCount = 0;
+        for(const task of inputData) {
+          const insertQuery = `
+            INSERT INTO todo_t_task (task_name, complete_flg, create_user, create_date, update_user, update_date)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $3, CURRENT_TIMESTAMP);
+          `;
+          const insertValues = [
+            task.taskName,
+            task.checkStatus ? '1' : '0',
+            'system',
+          ];
+
+          await pool.query(insertQuery, insertValues);
+          insertCount++;
+        };
+
+        // レスポンスデータ作成、送信処理
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: false,
+          msg: `${insertCount}件のタスクを登録しました。`,
+          insertCount: insertCount,
+        }));
+      } catch (error) {
+        console.error('Error inserting data:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: true,
+          msg: `タスクの登録中にエラーが発生しました。`,
+          description: error.message,
+        }));
+      };
+    });
+  } else {
+    // 404 Not Found
+    console.log(`Error requested URL: '${req.url}' is Not Found`);
+    res.writeHead(404);
+    res.end(`404 Not Found`);
+  };
+});
+
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
